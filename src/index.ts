@@ -4,8 +4,9 @@ import { createConnection } from "typeorm";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { HelloResolver } from "./resolvers/HelloWorld";
-import {MyContext} from '../src/types'
-
+import { MyContext } from "../src/types";
+import { User } from "./entities/User";
+import { UserResolver } from "./resolvers/user";
 
 const main = async () => {
   const connectDB = await createConnection({
@@ -14,29 +15,28 @@ const main = async () => {
     username: "w",
     logging: true,
     synchronize: true,
-    entities: [],
+    entities: [User],
   });
-  
+
   const app = express();
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers:[HelloResolver],
-      validate:false,
+      resolvers: [HelloResolver, UserResolver],
+      validate: false,
     }),
-    context: ({req, res}): MyContext =>({req,res})
-  })
+    context: ({ req, res }): MyContext => ({ req, res }),
+  });
 
   apolloServer.applyMiddleware({
     app,
-    cors:false
-  })
+    cors: false,
+  });
 
-
-  const PORT = process.env.PORT || 5000
-  app.listen(PORT, ()=>{
-    console.log(`server started on port ${PORT}`)
-  })
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`server started on port ${PORT}`);
+  });
 };
 
 main();

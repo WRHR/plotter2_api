@@ -18,6 +18,8 @@ const typeorm_1 = require("typeorm");
 const apollo_server_express_1 = require("apollo-server-express");
 const type_graphql_1 = require("type-graphql");
 const HelloWorld_1 = require("./resolvers/HelloWorld");
+const User_1 = require("./entities/User");
+const user_1 = require("./resolvers/user");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const connectDB = yield typeorm_1.createConnection({
         type: "postgres",
@@ -25,19 +27,19 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         username: "w",
         logging: true,
         synchronize: true,
-        entities: [],
+        entities: [User_1.User],
     });
     const app = express_1.default();
     const apolloServer = new apollo_server_express_1.ApolloServer({
         schema: yield type_graphql_1.buildSchema({
-            resolvers: [HelloWorld_1.HelloResolver],
+            resolvers: [HelloWorld_1.HelloResolver, user_1.UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ req, res })
+        context: ({ req, res }) => ({ req, res }),
     });
     apolloServer.applyMiddleware({
         app,
-        cors: false
+        cors: false,
     });
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
