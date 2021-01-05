@@ -6,7 +6,7 @@ import {
   Field,
   Mutation,
   ObjectType,
-  Query,
+  
   Resolver,
 } from "type-graphql";
 import argon2 from "argon2";
