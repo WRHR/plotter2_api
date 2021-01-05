@@ -15,6 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const express_1 = __importDefault(require("express"));
 const typeorm_1 = require("typeorm");
+const apollo_server_express_1 = require("apollo-server-express");
+const type_graphql_1 = require("type-graphql");
+const HelloWorld_1 = require("./resolvers/HelloWorld");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const connectDB = yield typeorm_1.createConnection({
         type: "postgres",
@@ -25,8 +28,19 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         entities: [],
     });
     const app = express_1.default();
-    const PORT = process.env.PORT || 4000;
-    app.listen(4000, () => {
+    const apolloServer = new apollo_server_express_1.ApolloServer({
+        schema: yield type_graphql_1.buildSchema({
+            resolvers: [HelloWorld_1.HelloResolver],
+            validate: false,
+        }),
+        context: ({ req, res }) => ({ req, res })
+    });
+    apolloServer.applyMiddleware({
+        app,
+        cors: false
+    });
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
         console.log(`server started on port ${PORT}`);
     });
 });
