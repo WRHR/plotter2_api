@@ -1,18 +1,11 @@
 import { User } from "../entities/User";
 import { MyContext } from "src/types";
-import {
-  Arg,
-  Ctx,
-  Field,
-  Mutation,
-  ObjectType,
-  
-  Resolver,
-} from "type-graphql";
+import { Arg, Ctx, Field, Mutation, ObjectType, Resolver } from "type-graphql";
 import argon2 from "argon2";
 import { getConnection } from "typeorm";
 import { UsernamePasswordInput } from "./UsernamePasswordInputs";
 import { validateRegister } from "src/utils/validateRegister";
+import { COOKIE_NAME } from "src/constants";
 
 @ObjectType()
 class FieldError {
@@ -70,6 +63,62 @@ export class UserResolver {
         };
       }
     }
+
+    req.session.userId = user.id;
+
     return { user };
+  }
+  @Mutation(() => UserResponse)
+  async login(
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
+    @Ctx() { req }: MyContext
+  ): Promise<UserResponse> {
+    const user = await User.findOne(
+      usernameOrEmail.includes("@")
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
+    );
+
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "usernameOrEmail",
+            message: "that user doesn't exist",
+          },
+        ],
+      };
+    }
+
+    const valid = await argon2.verify(user.password, password);
+    if (!valid) {
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "incorrect password",
+          },
+        ],
+      };
+    }
+    req.session.userId = user.id;
+
+    return { user };
+  }
+
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    return new Promise((resolve) =>
+      req.session.destroy((err) => {
+        res.clearCookie(COOKIE_NAME);
+        if (err) {
+          console.log(err);
+          resolve(false);
+          return;
+        }
+        resolve(true);
+      })
+    );
   }
 }

@@ -41,7 +41,7 @@ const main = async () => {
         secure: __prod__, // cookie only works in https
       },
       saveUninitialized: false,
-      secret: process.env.REDIS_SECRET,
+      secret: `${process.env.REDIS_SECRET}`,
       resave: false,
     })
   );
@@ -51,7 +51,7 @@ const main = async () => {
       resolvers: [HelloResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }): MyContext => ({ req, res }),
+    context: ({ req, res }): MyContext => ({ req, res, redis }),
   });
 
   apolloServer.applyMiddleware({

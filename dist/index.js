@@ -49,7 +49,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             secure: constants_1.__prod__,
         },
         saveUninitialized: false,
-        secret: process.env.REDIS_SECRET,
+        secret: `${process.env.REDIS_SECRET}`,
         resave: false,
     }));
     const apolloServer = new apollo_server_express_1.ApolloServer({
@@ -57,7 +57,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             resolvers: [HelloWorld_1.HelloResolver, user_1.UserResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ req, res }),
+        context: ({ req, res }) => ({ req, res, redis }),
     });
     apolloServer.applyMiddleware({
         app,

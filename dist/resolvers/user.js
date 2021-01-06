@@ -31,6 +31,7 @@ const argon2_1 = __importDefault(require("argon2"));
 const typeorm_1 = require("typeorm");
 const UsernamePasswordInputs_1 = require("./UsernamePasswordInputs");
 const validateRegister_1 = require("src/utils/validateRegister");
+const constants_1 = require("src/constants");
 let FieldError = class FieldError {
 };
 __decorate([
@@ -93,8 +94,50 @@ let UserResolver = class UserResolver {
                     };
                 }
             }
+            req.session.userId = user.id;
             return { user };
         });
+    }
+    login(usernameOrEmail, password, { req }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield User_1.User.findOne(usernameOrEmail.includes("@")
+                ? { where: { email: usernameOrEmail } }
+                : { where: { username: usernameOrEmail } });
+            if (!user) {
+                return {
+                    errors: [
+                        {
+                            field: "usernameOrEmail",
+                            message: "that user doesn't exist",
+                        },
+                    ],
+                };
+            }
+            const valid = yield argon2_1.default.verify(user.password, password);
+            if (!valid) {
+                return {
+                    errors: [
+                        {
+                            field: "password",
+                            message: "incorrect password",
+                        },
+                    ],
+                };
+            }
+            req.session.userId = user.id;
+            return { user };
+        });
+    }
+    logout({ req, res }) {
+        return new Promise((resolve) => req.session.destroy((err) => {
+            res.clearCookie(constants_1.COOKIE_NAME);
+            if (err) {
+                console.log(err);
+                resolve(false);
+                return;
+            }
+            resolve(true);
+        }));
     }
 };
 __decorate([
@@ -105,6 +148,22 @@ __decorate([
     __metadata("design:paramtypes", [UsernamePasswordInputs_1.UsernamePasswordInput, Object]),
     __metadata("design:returntype", Promise)
 ], UserResolver.prototype, "register", null);
+__decorate([
+    type_graphql_1.Mutation(() => UserResponse),
+    __param(0, type_graphql_1.Arg("usernameOrEmail")),
+    __param(1, type_graphql_1.Arg("password")),
+    __param(2, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "login", null);
+__decorate([
+    type_graphql_1.Mutation(() => Boolean),
+    __param(0, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UserResolver.prototype, "logout", null);
 UserResolver = __decorate([
     type_graphql_1.Resolver()
 ], UserResolver);
